@@ -4,6 +4,7 @@ import moderngl
 from moderngl_window import geometry, WindowConfig
 
 from . import config
+from .glsl_structs import Agent
 
 
 class Window(WindowConfig):
@@ -24,8 +25,17 @@ class Window(WindowConfig):
         self.texture = self.ctx.texture(self.window_size, 4)
         self.texture.filter = moderngl.NEAREST, moderngl.NEAREST
 
-        self.image = self.compute['image']
         self.tex_sampler = self.program['tex_sampler']
+        #self.time = self.compute['time']
+        self.frame_time = self.compute['frame_time']
+        self.speed = self.compute['speed']
+
+        agents = bytearray()
+
+        for i in range(100):
+            agents += Agent((self.window_size[0] / 2, self.window_size[1] / 2), math.pi * 2 * i / 100).pack()
+
+        self.agent_buf = self.ctx.buffer(agents)
 
     def load_shaders(self):
         shaders = {}
@@ -42,10 +52,14 @@ class Window(WindowConfig):
     def render(self, time: float, frame_time: float):
         self.ctx.clear()
         
-        x, y = self.texture.size
-        gx, gy, _ = config.LOCAL_GROUP_SIZE.values()
-        nx, ny, nz = math.ceil(x / gx), math.ceil(y / gy), 1
+        gx, _, _ = config.LOCAL_GROUP_SIZE.values()
+        nx, ny, nz = math.ceil(100 / gx), 1, 1
 
+        #self.time.value = time
+        self.frame_time.value = frame_time if frame_time > 0 else 1 / 60
+        self.speed.value = 100.0
+
+        self.agent_buf.bind_to_storage_buffer(0)
         self.texture.bind_to_image(0)
         self.compute.run(nx, ny, nz)
 

@@ -13,4 +13,4 @@ WINDOW_SHADER_EXTS = {
 }
 
 COMPUTE_SHADER = 'slime.comp'
-LOCAL_GROUP_SIZE = {'X': 16, 'Y': 16, 'Z': 1}
+LOCAL_GROUP_SIZE = {'X': 16, 'Y': 1, 'Z': 1}
