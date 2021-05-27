@@ -1,0 +1,30 @@
+#version 460 core
+
+#define X 1
+#define Y 1
+#define Z 1
+
+layout(local_size_x = X, local_size_y = Y, local_size_z = Z) in;
+
+layout(rgba8, location = 0) restrict uniform image2D trail_map;
+uniform float frame_time;
+uniform float diffuse_factor;
+uniform float fade_speed;
+
+void main() {
+    ivec2 coords = ivec2(gl_GlobalInvocationID.xy);
+    vec4 original = imageLoad(trail_map, coords);
+    vec4 blurred = vec4(0);
+
+    for (int i = -1; i <= 1; i++) {
+        for (int j = -1; j <= 1; j++) {
+            blurred += imageLoad(trail_map, coords + ivec2(i, j));
+        }
+    }
+
+    blurred /= 9;
+    blurred = original * (1 - diffuse_factor) + blurred * diffuse_factor;
+    blurred = max(vec4(0), blurred - fade_speed * frame_time);
+
+    imageStore(trail_map, coords, blurred);
+}

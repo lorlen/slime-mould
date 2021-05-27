@@ -12,5 +12,10 @@ WINDOW_SHADER_EXTS = {
     'frag': 'fragment_shader'
 }
 
-COMPUTE_SHADER = 'slime.comp'
-LOCAL_GROUP_SIZE = {'X': 16, 'Y': 1, 'Z': 1}
+SLIME_SHADER = 'slime.comp'
+SLIME_SHADER_GROUPS = {'X': 16, 'Y': 1, 'Z': 1}
+
+FADE_SHADER = 'fade.comp'
+FADE_SHADER_GROUPS = {'X': 16, 'Y': 16, 'Z': 1}
+
+NUM_AGENTS = 100

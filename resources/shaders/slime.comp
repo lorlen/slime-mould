@@ -44,7 +44,8 @@ void main() {
     vec2 size = imageSize(trail_map);
 
     Agent agent = agents[gl_GlobalInvocationID.x];
-    uint random = hash(uint(agent.position.y * size.x + agent.position.x) + hash(gl_GlobalInvocationID.x));
+    uint random = hash(uint(agent.position.y * size.x + agent.position.x))
+                + hash(uint(gl_GlobalInvocationID.x + time * 100000));
 
     vec2 direction = vec2(cos(agent.angle), sin(agent.angle));
     vec2 new_pos = agent.position + direction * speed * frame_time;
