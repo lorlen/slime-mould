@@ -4,7 +4,7 @@ import moderngl
 from moderngl_window import geometry, WindowConfig
 
 from . import config
-from .glsl_structs import Agent
+from .glsl_structs import Agent, SpeciesProperties
 
 
 class Window(WindowConfig):
@@ -37,11 +37,22 @@ class Window(WindowConfig):
         self.fade_speed = self.fade['fade_speed']
 
         agents = bytearray()
+        species = bytearray()
 
         for i in range(config.NUM_AGENTS):
-            agents += Agent((self.window_size[0] / 2, self.window_size[1] / 2), math.pi * 2 * i / 100).pack()
+            agents += Agent((self.window_size[0] / 2, self.window_size[1] / 2), math.pi * 2 * i / 100, 0).pack()
+
+        species += SpeciesProperties(
+            move_speed=20,
+            turn_speed=2,
+            sensor_angle_deg=30,
+            sensor_offset_dst=35,
+            sensor_size=1,
+            color=(1,1,1,1)
+        ).pack()
 
         self.agent_buf = self.ctx.buffer(agents)
+        self.species_buf = self.ctx.buffer(species)
 
         self.slime_groups = self.work_groups((config.NUM_AGENTS, 1, 1), config.SLIME_SHADER_GROUPS.values())
         self.fade_groups = self.work_groups((*self.texture.size, 1), config.FADE_SHADER_GROUPS.values())
@@ -76,6 +87,7 @@ class Window(WindowConfig):
         self.fade_speed.value = 0.04
 
         self.agent_buf.bind_to_storage_buffer(0)
+        self.species_buf.bind_to_storage_buffer(1)
         self.texture.bind_to_image(0)
         self.slime.run(*self.slime_groups)
         self.fade.run(*self.fade_groups)
