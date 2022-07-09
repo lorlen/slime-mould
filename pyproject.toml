@@ -8,6 +8,8 @@ authors = ["lorlen <filip.lew975@gmail.com>"]
 python = "^3.9"
 moderngl = "^5.6.4"
 moderngl-window = "^2.4.1"
+typed-settings = "^1.1.0"
+exceptiongroup = {version = "*", python = "<3.11"}
 
 [tool.poetry.dev-dependencies]
 mypy = "^0.961"

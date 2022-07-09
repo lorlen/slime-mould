@@ -1,4 +1,41 @@
 [[package]]
+name = "attrs"
+version = "21.4.0"
+description = "Classes Without Boilerplate"
+category = "main"
+optional = false
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
+
+[package.extras]
+dev = ["coverage[toml] (>=5.0.2)", "hypothesis", "pympler", "pytest (>=4.3.0)", "six", "mypy", "pytest-mypy-plugins", "zope.interface", "furo", "sphinx", "sphinx-notfound-page", "pre-commit", "cloudpickle"]
+docs = ["furo", "sphinx", "zope.interface", "sphinx-notfound-page"]
+tests = ["coverage[toml] (>=5.0.2)", "hypothesis", "pympler", "pytest (>=4.3.0)", "six", "mypy", "pytest-mypy-plugins", "zope.interface", "cloudpickle"]
+tests_no_zope = ["coverage[toml] (>=5.0.2)", "hypothesis", "pympler", "pytest (>=4.3.0)", "six", "mypy", "pytest-mypy-plugins", "cloudpickle"]
+
+[[package]]
+name = "cattrs"
+version = "22.1.0"
+description = "Composable complex class support for attrs and dataclasses."
+category = "main"
+optional = false
+python-versions = ">=3.7,<4.0"
+
+[package.dependencies]
+attrs = ">=20"
+exceptiongroup = {version = "*", markers = "python_version <= \"3.10\""}
+
+[[package]]
+name = "exceptiongroup"
+version = "1.0.0rc8"
+description = "Backport of PEP 654 (exception groups)"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+
+[package.extras]
+test = ["pytest (>=6)"]
+
+[[package]]
 name = "glcontext"
 version = "2.3.6"
 description = "Portable OpenGL Context"
@@ -131,9 +168,30 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*"
 name = "tomli"
 version = "2.0.1"
 description = "A lil' TOML parser"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.7"
+
+[[package]]
+name = "typed-settings"
+version = "1.1.0"
+description = "Typed settings based on attrs classes"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+
+[package.dependencies]
+attrs = ">=21.3"
+cattrs = ">=22.1"
+tomli = {version = ">=2", markers = "python_version < \"3.11\""}
+
+[package.extras]
+click = ["click (>=7,<9)"]
+dev = ["click (>=7,<9)", "click-option-group", "pytest (>=6)", "pytest-cov", "coverage[toml] (>=5.3)", "bandit", "flake8", "flake8-bandit", "flake8-black", "flake8-bugbear", "flake8-isort", "mypy", "types-toml", "furo", "sphinx", "sphinx-autodoc-typehints", "nox", "safety"]
+docs = ["click (>=7,<9)", "click-option-group", "furo", "sphinx", "sphinx-autodoc-typehints"]
+lint = ["click (>=7,<9)", "click-option-group", "bandit", "flake8", "flake8-bandit", "flake8-black", "flake8-bugbear", "flake8-isort", "mypy", "types-toml"]
+option-groups = ["click (>=7,<9)", "click-option-group"]
+test = ["click (>=7,<9)", "click-option-group", "pytest (>=6)", "pytest-cov", "coverage[toml] (>=5.3)"]
 
 [[package]]
 name = "typing-extensions"
@@ -146,9 +204,21 @@ python-versions = ">=3.7"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "34435bb4460f2b45938dc6ffaf3f62d9c9334ca94a0a1dc8c21d666d2037330c"
+content-hash = "60606e63bd0bd398c1e0a545b404bd9ff0b344835c555c71f4205f4e22a3fef3"
 
 [metadata.files]
+attrs = [
+    {file = "attrs-21.4.0-py2.py3-none-any.whl", hash = "sha256:2d27e3784d7a565d36ab851fe94887c5eccd6a463168875832a1be79c82828b4"},
+    {file = "attrs-21.4.0.tar.gz", hash = "sha256:626ba8234211db98e869df76230a137c4c40a12d72445c45d5f5b716f076e2fd"},
+]
+cattrs = [
+    {file = "cattrs-22.1.0-py3-none-any.whl", hash = "sha256:d55c477b4672f93606e992049f15d526dc7867e6c756cd6256d4af92e2b1e364"},
+    {file = "cattrs-22.1.0.tar.gz", hash = "sha256:94b67b64cf92c994f8784c40c082177dc916e0489a73a9a36b24eb18a9db40c6"},
+]
+exceptiongroup = [
+    {file = "exceptiongroup-1.0.0rc8-py3-none-any.whl", hash = "sha256:ab0a968e1ef769e55d9a596f4a89f7be9ffedbc9fdefdb77cc68cf5c33ce1035"},
+    {file = "exceptiongroup-1.0.0rc8.tar.gz", hash = "sha256:6990c24f06b8d33c8065cfe43e5e8a4bfa384e0358be036af9cc60b6321bd11a"},
+]
 glcontext = []
 moderngl = []
 moderngl-window = []
@@ -172,5 +242,9 @@ six = [
 tomli = [
     {file = "tomli-2.0.1-py3-none-any.whl", hash = "sha256:939de3e7a6161af0c887ef91b7d41a53e7c5a1ca976325f429cb46ea9bc30ecc"},
     {file = "tomli-2.0.1.tar.gz", hash = "sha256:de526c12914f0c550d15924c62d72abc48d6fe7364aa87328337a31007fe8a4f"},
+]
+typed-settings = [
+    {file = "typed-settings-1.1.0.tar.gz", hash = "sha256:25ad992eacc9492bcae6120c85ac8cced26d6bf25cded99bdadcdd9716a0780b"},
+    {file = "typed_settings-1.1.0-py3-none-any.whl", hash = "sha256:0c0fa3f021cea4104923b31a8a5465d270041c2c710514eea26ce63eb9130e7e"},
 ]
 typing-extensions = []

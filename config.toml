@@ -1,0 +1,8 @@
+[[slime-mould.species]]
+agents = 1000
+move_speed = 20.0
+turn_speed = 2.0
+sensor_angle_degrees = 30.0
+sensor_offset_dst = 35.0
+sensor_size = 1
+color = [0, 0, 0, 0]

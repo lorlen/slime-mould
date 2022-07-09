@@ -1,18 +1,22 @@
-from pathlib import Path
+import typed_settings as ts
 
-OPENGL_VERSION = (4, 6)
+from .constants import CONFIG_PATH
 
-RESOURCE_DIR = Path(__file__).parent.parent / "resources"
-SHADER_DIR = Path("shaders")
 
-WINDOW_TITLE = "Slime Mould"
-WINDOW_SHADER_NAME = "window"
-WINDOW_SHADER_EXTS = {"vert": "vertex_shader", "frag": "fragment_shader"}
+@ts.settings
+class SpeciesConfig:
+    agents: int
+    move_speed: float
+    turn_speed: float
+    sensor_angle_degrees: float
+    sensor_offset_dst: float
+    color: tuple[float, float, float, float]
+    sensor_size: int
 
-SLIME_SHADER = "slime.comp"
-SLIME_SHADER_GROUPS = {"X": 16, "Y": 1, "Z": 1}
 
-FADE_SHADER = "fade.comp"
-FADE_SHADER_GROUPS = {"X": 16, "Y": 16, "Z": 1}
+@ts.settings
+class Config:
+    species: list[SpeciesConfig]
 
-NUM_AGENTS = 1000
+
+config = ts.load(Config, "slime-mould", [CONFIG_PATH])

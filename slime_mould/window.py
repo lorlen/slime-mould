@@ -3,24 +3,25 @@ import math
 import moderngl
 from moderngl_window import WindowConfig, geometry
 
-from . import config
+from . import constants
+from .config import config
 from .glsl_structs import Agent, SpeciesSettings
 
 
 class Window(WindowConfig):
-    gl_version = config.OPENGL_VERSION
-    title = config.WINDOW_TITLE
-    resource_dir = config.RESOURCE_DIR
+    gl_version = constants.OPENGL_VERSION
+    title = constants.WINDOW_TITLE
+    resource_dir = constants.RESOURCE_DIR
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
         self.program = self.ctx.program(**self.load_shaders())
         self.slime = self.load_compute_shader(
-            config.SHADER_DIR / config.SLIME_SHADER, config.SLIME_SHADER_GROUPS
+            constants.SHADER_DIR / constants.SLIME_SHADER, constants.SLIME_SHADER_GROUPS
         )
         self.fade = self.load_compute_shader(
-            config.SHADER_DIR / config.FADE_SHADER, config.FADE_SHADER_GROUPS
+            constants.SHADER_DIR / constants.FADE_SHADER, constants.FADE_SHADER_GROUPS
         )
         self.vao = geometry.quad_fs(normals=False).instance(self.program)
 
@@ -40,47 +41,50 @@ class Window(WindowConfig):
         self.fade_speed = self.fade["fade_speed"]
 
         agents = bytearray()
+        settings = bytearray()
+        num_agents = 0
 
-        for i in range(config.NUM_AGENTS):
-            agents += Agent(
-                (self.window_size[0] / 2, self.window_size[1] / 2),
-                math.pi * 2 * i / 100,
-                0,
+        for (species_idx, species_config) in enumerate(config.species):
+            for i in range(species_config.agents):
+                agents += Agent(
+                    (self.window_size[0] / 2, self.window_size[1] / 2),
+                    math.pi * 2 * i / species_config.agents,
+                    species_idx,
+                ).pack()
+
+            settings += SpeciesSettings(
+                move_speed=species_config.move_speed,
+                turn_speed=species_config.turn_speed,
+                sensor_angle_degrees=species_config.sensor_angle_degrees,
+                sensor_offset_dst=species_config.sensor_offset_dst,
+                sensor_size=species_config.sensor_size,
+                color=species_config.color,
             ).pack()
 
-        settings = bytearray()
-
-        settings += SpeciesSettings(
-            move_speed=100.0,
-            turn_speed=2,
-            sensor_angle_degrees=30,
-            sensor_offset_dst=35,
-            sensor_size=1,
-            color=(0.0, 0.0, 0.0, 0.0),
-        ).pack()
+            num_agents += species_config.agents
 
         self.agent_buf = self.ctx.buffer(agents)
         self.settings_buf = self.ctx.buffer(settings)
 
         self.slime_groups = self.work_groups(
-            (config.NUM_AGENTS, 1, 1), config.SLIME_SHADER_GROUPS.values()
+            (num_agents, 1, 1), constants.SLIME_SHADER_GROUPS.values()
         )
         self.fade_groups = self.work_groups(
-            (*self.texture.size, 1), config.FADE_SHADER_GROUPS.values()
+            (*self.texture.size, 1), constants.FADE_SHADER_GROUPS.values()
         )
 
     def load_shaders(self):
         shaders = {}
 
-        for ext, name in config.WINDOW_SHADER_EXTS.items():
+        for ext, name in constants.WINDOW_SHADER_EXTS.items():
             if (
-                path := config.RESOURCE_DIR
-                / config.SHADER_DIR
-                / f"{config.WINDOW_SHADER_NAME}.{ext}"
+                path := constants.RESOURCE_DIR
+                / constants.SHADER_DIR
+                / f"{constants.WINDOW_SHADER_NAME}.{ext}"
             ).exists():
                 shaders[name] = path.read_text()
             else:
-                print(f"Could not find shader: {config.WINDOW_SHADER_NAME}.{ext}")
+                print(f"Could not find shader: {constants.WINDOW_SHADER_NAME}.{ext}")
                 exit(1)
 
         return shaders
