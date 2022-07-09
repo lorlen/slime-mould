@@ -11,16 +11,30 @@ layout(local_size_x = X, local_size_y = Y, local_size_z = Z) in;
 struct Agent {
     vec2 position;
     float angle;
+    int species;
+};
+
+struct SpeciesSettings {
+    float move_speed;
+    float turn_speed;
+
+    float sensor_angle_degrees;
+    float sensor_offset_dst;
+    vec4 color;
+    int sensor_size;
 };
 
 layout(std430, binding = 0) buffer agent_buf {
     Agent agents[];
 };
 
+layout(std430, binding = 1) buffer settings_buf {
+    SpeciesSettings species_settings[];
+};
+
 layout(rgba8, location = 0) restrict uniform image2D trail_map;
 uniform float time;
 uniform float frame_time;
-uniform float speed;
 
 // Source: www.cs.ubc.ca/~rbridson/docs/schechter-sca08-turbulence.pdf
 uint hash(uint state) {
@@ -37,6 +51,25 @@ float scale_to_01(uint num) {
     return float(num) / 4294967295.0;
 }
 
+float sense(Agent agent, SpeciesSettings settings, float sensor_angle_offset, vec2 size) {
+    float sensor_angle = agent.angle + sensor_angle_offset;
+    vec2 sensor_dir = vec2(cos(sensor_angle), sin(sensor_angle));
+    ivec2 sensor_center = ivec2(agent.position + sensor_dir * settings.sensor_offset_dst);
+    float sum = 0;
+
+    for (int offset_x = -settings.sensor_size; offset_x <= settings.sensor_size; offset_x++) {
+        for (int offset_y = -settings.sensor_size; offset_y <= settings.sensor_size; offset_y++) {
+            ivec2 pos = sensor_center + ivec2(offset_x, offset_y);
+
+            if (pos.x >= 0 && pos.x < size.x && pos.y >= 0 && pos.y < size.y) {
+                sum += imageLoad(trail_map, pos).x;
+            }
+        }
+    }
+
+    return sum;
+}
+
 void main() {
     if (gl_GlobalInvocationID.x >= agents.length())
         return;
@@ -44,15 +77,34 @@ void main() {
     vec2 size = imageSize(trail_map);
 
     Agent agent = agents[gl_GlobalInvocationID.x];
+    SpeciesSettings settings = species_settings[agent.species];
+
     uint random = hash(uint(agent.position.y * size.x + agent.position.x))
                 + hash(uint(gl_GlobalInvocationID.x + time * 100000));
+    float random01 = scale_to_01(random);
+
+    float sensor_angle_rad = radians(settings.sensor_angle_degrees);
+    float weight_forward = sense(agent, settings, 0, size);
+    float weight_left = sense(agent, settings, sensor_angle_rad, size);
+    float weight_right = sense(agent, settings, -sensor_angle_rad, size);
+
+    float turn_speed = settings.turn_speed * 2 * PI;
+
+    if (weight_forward > weight_left && weight_forward > weight_right) {}
+    else if (weight_forward < weight_left && weight_forward < weight_right) {
+        agents[gl_GlobalInvocationID.x].angle = (random01 - 0.5) * 2 * turn_speed * frame_time;
+    } else if (weight_left < weight_right) {
+        agents[gl_GlobalInvocationID.x].angle -= random01 * turn_speed * frame_time;
+    } else if (weight_left > weight_right) {
+        agents[gl_GlobalInvocationID.x].angle += random01 * turn_speed * frame_time;
+    }
 
     vec2 direction = vec2(cos(agent.angle), sin(agent.angle));
-    vec2 new_pos = agent.position + direction * speed * frame_time;
+    vec2 new_pos = agent.position + direction * settings.move_speed * frame_time;
 
     if (new_pos.x < 0 || new_pos.x >= size.x || new_pos.y < 0 || new_pos.y > size.y) {
         new_pos = clamp(new_pos, vec2(0), size - 0.01);
-        agents[gl_GlobalInvocationID.x].angle = scale_to_01(random) * 2 * PI;
+        agents[gl_GlobalInvocationID.x].angle = random01 * 2 * PI;
     }
 
     agents[gl_GlobalInvocationID.x].position = new_pos;

@@ -1,10 +1,10 @@
 import math
 
 import moderngl
-from moderngl_window import geometry, WindowConfig
+from moderngl_window import WindowConfig, geometry
 
 from . import config
-from .glsl_structs import Agent
+from .glsl_structs import Agent, SpeciesSettings
 
 
 class Window(WindowConfig):
@@ -16,8 +16,12 @@ class Window(WindowConfig):
         super().__init__(**kwargs)
 
         self.program = self.ctx.program(**self.load_shaders())
-        self.slime = self.load_compute_shader(config.SHADER_DIR / config.SLIME_SHADER, config.SLIME_SHADER_GROUPS)
-        self.fade = self.load_compute_shader(config.SHADER_DIR / config.FADE_SHADER, config.FADE_SHADER_GROUPS)
+        self.slime = self.load_compute_shader(
+            config.SHADER_DIR / config.SLIME_SHADER, config.SLIME_SHADER_GROUPS
+        )
+        self.fade = self.load_compute_shader(
+            config.SHADER_DIR / config.FADE_SHADER, config.FADE_SHADER_GROUPS
+        )
         self.vao = geometry.quad_fs(normals=False).instance(self.program)
 
         self.init_shader_resources()
@@ -26,34 +30,57 @@ class Window(WindowConfig):
         self.texture = self.ctx.texture(self.window_size, 4)
         self.texture.filter = moderngl.NEAREST, moderngl.NEAREST
 
-        self.tex_sampler = self.program['tex_sampler']
+        self.tex_sampler = self.program["tex_sampler"]
 
-        self.time = self.slime['time']
-        self.slime_frame_time = self.slime['frame_time']
-        self.slime_speed = self.slime['speed']
+        self.time = self.slime["time"]
+        self.slime_frame_time = self.slime["frame_time"]
 
-        self.fade_frame_time = self.fade['frame_time']
-        self.diffuse_factor = self.fade['diffuse_factor']
-        self.fade_speed = self.fade['fade_speed']
+        self.fade_frame_time = self.fade["frame_time"]
+        self.diffuse_factor = self.fade["diffuse_factor"]
+        self.fade_speed = self.fade["fade_speed"]
 
         agents = bytearray()
 
         for i in range(config.NUM_AGENTS):
-            agents += Agent((self.window_size[0] / 2, self.window_size[1] / 2), math.pi * 2 * i / 100).pack()
+            agents += Agent(
+                (self.window_size[0] / 2, self.window_size[1] / 2),
+                math.pi * 2 * i / 100,
+                0,
+            ).pack()
+
+        settings = bytearray()
+
+        settings += SpeciesSettings(
+            move_speed=100.0,
+            turn_speed=2,
+            sensor_angle_degrees=30,
+            sensor_offset_dst=35,
+            sensor_size=1,
+            color=(0.0, 0.0, 0.0, 0.0),
+        ).pack()
 
         self.agent_buf = self.ctx.buffer(agents)
+        self.settings_buf = self.ctx.buffer(settings)
 
-        self.slime_groups = self.work_groups((config.NUM_AGENTS, 1, 1), config.SLIME_SHADER_GROUPS.values())
-        self.fade_groups = self.work_groups((*self.texture.size, 1), config.FADE_SHADER_GROUPS.values())
+        self.slime_groups = self.work_groups(
+            (config.NUM_AGENTS, 1, 1), config.SLIME_SHADER_GROUPS.values()
+        )
+        self.fade_groups = self.work_groups(
+            (*self.texture.size, 1), config.FADE_SHADER_GROUPS.values()
+        )
 
     def load_shaders(self):
         shaders = {}
 
         for ext, name in config.WINDOW_SHADER_EXTS.items():
-            if (path := config.RESOURCE_DIR / config.SHADER_DIR / f'{config.WINDOW_SHADER_NAME}.{ext}').exists():
+            if (
+                path := config.RESOURCE_DIR
+                / config.SHADER_DIR
+                / f"{config.WINDOW_SHADER_NAME}.{ext}"
+            ).exists():
                 shaders[name] = path.read_text()
             else:
-                print(f'Could not find shader: {config.WINDOW_SHADER_NAME}.{ext}')
+                print(f"Could not find shader: {config.WINDOW_SHADER_NAME}.{ext}")
                 exit(1)
 
         return shaders
@@ -69,13 +96,13 @@ class Window(WindowConfig):
 
         self.time.value = time
         self.slime_frame_time.value = frame_time
-        self.slime_speed.value = 100.0
 
         self.fade_frame_time.value = frame_time
         self.diffuse_factor.value = 1.0
         self.fade_speed.value = 0.04
 
         self.agent_buf.bind_to_storage_buffer(0)
+        self.settings_buf.bind_to_storage_buffer(1)
         self.texture.bind_to_image(0)
         self.slime.run(*self.slime_groups)
         self.fade.run(*self.fade_groups)
