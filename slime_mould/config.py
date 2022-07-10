@@ -16,21 +16,24 @@ class SpeciesConfig:
 
 
 @ts.settings
-class GeneralConfig:
+class Config:
+    window_size: tuple[int, int]
+
     agents: int
     spawn_mode: tuple[
         Literal["center", "inside-circle", "on-circle", "random"],
         Literal["inwards", "outwards", "random"],
     ]
+    spawn_radius: float
+
     trail_weight: float
     diffuse_rate: float
     decay_rate: float
 
-
-@ts.settings
-class Config:
-    general: GeneralConfig
     species: list[SpeciesConfig]
 
 
 config = ts.load(Config, "slime-mould", [CONFIG_PATH])
+
+if len(config.species) > 3:
+    raise Exception("More than 3 species are not supported")

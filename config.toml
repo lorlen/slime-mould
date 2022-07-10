@@ -1,9 +1,14 @@
-[slime-mould.general]
+[slime-mould]
+window_size = [1280, 720]
+
 agents = 25000
 spawn_mode = ["inside-circle", "inwards"]
+spawn_radius = 1.0
+
 trail_weight = 12.0
 diffuse_rate = 3.0
 decay_rate = 0.5
+
 
 [[slime-mould.species]]
 move_speed = 70.0
@@ -13,6 +18,7 @@ sensor_offset_dst = 20.0
 sensor_size = 1
 color = [0.53608304, 0.062745094, 1.0, 0.0]
 
+
 [[slime-mould.species]]
 move_speed = 50.0
 turn_speed = -90.0
@@ -20,6 +26,7 @@ sensor_angle_degrees = 112.0
 sensor_offset_dst = 30.0
 sensor_size = 1
 color = [0.10588236, 0.6240185, 0.83137256, 0.0]
+
 
 [[slime-mould.species]]
 move_speed = 50.0

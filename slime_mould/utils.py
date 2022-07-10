@@ -27,15 +27,21 @@ def generate_agents_buffer(config: Config, window_size: tuple[int, int]):
     agents = bytearray()
     center = (window_size[0] // 2, window_size[1] // 2)
 
-    for i in range(config.general.agents):
-        match config.general.spawn_mode[0]:
+    for i in range(config.agents):
+        match config.spawn_mode[0]:
             case "inside-circle":
                 position = _random_inside_circle(
-                    min(window_size[0], window_size[1]) / 2, center
+                    min(window_size[0], window_size[1])
+                    / 2
+                    * config.spawn_radius,
+                    center,
                 )
             case "on-circle":
                 position = _random_on_circle(
-                    min(window_size[0], window_size[1]) / 2, center
+                    min(window_size[0], window_size[1])
+                    / 2
+                    * config.spawn_radius,
+                    center,
                 )
             case "random":
                 position = random.randrange(window_size[0]), random.randrange(
@@ -44,7 +50,7 @@ def generate_agents_buffer(config: Config, window_size: tuple[int, int]):
             case _:
                 position = center
 
-        match config.general.spawn_mode[1]:
+        match config.spawn_mode[1]:
             case "inwards":
                 x, y = _normalized_diff(center, position)
                 angle = math.atan2(y, x)

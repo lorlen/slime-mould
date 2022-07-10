@@ -10,6 +10,8 @@ class Window(WindowConfig):
     gl_version = constants.OPENGL_VERSION
     title = constants.WINDOW_TITLE
     resource_dir = constants.RESOURCE_DIR
+    window_size = config.window_size
+    resizable = False
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -65,9 +67,9 @@ class Window(WindowConfig):
         self.decay_rate = self.fade["decay_rate"]
 
         self.tex_sampler.value = 2  # type: ignore
-        self.trail_weight.value = config.general.trail_weight  # type: ignore
-        self.diffuse_rate.value = config.general.diffuse_rate  # type: ignore
-        self.decay_rate.value = config.general.decay_rate  # type: ignore
+        self.trail_weight.value = config.trail_weight  # type: ignore
+        self.diffuse_rate.value = config.diffuse_rate  # type: ignore
+        self.decay_rate.value = config.decay_rate  # type: ignore
 
     def init_buffers(self):
         self.agent_buf = self.ctx.buffer(
@@ -80,7 +82,7 @@ class Window(WindowConfig):
 
     def init_work_groups(self):
         self.slime_groups = work_groups(
-            (config.general.agents, 1, 1), constants.SLIME_SHADER_GROUPS.values()
+            (config.agents, 1, 1), constants.SLIME_SHADER_GROUPS.values()
         )
         self.fade_groups = work_groups(
             (*self.trail_map.size, 1), constants.FADE_SHADER_GROUPS.values()
