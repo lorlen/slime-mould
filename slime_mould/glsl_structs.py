@@ -5,19 +5,22 @@ from typing import ClassVar
 
 @dataclass
 class Agent:
-    _struct: ClassVar[Struct] = Struct("=3fi")
+    _struct: ClassVar[Struct] = Struct("=3f5i")
 
     position: tuple[float, float]
     angle: float
-    species: int
+    species_index: int
+    species_mask: tuple[int, int, int, int]
 
     def pack(self):
-        return self._struct.pack(*self.position, self.angle, self.species)
+        return self._struct.pack(
+            *self.position, self.angle, self.species_index, *self.species_mask
+        )
 
     @classmethod
     def unpack(cls, buffer: bytes, offset: int = 0):
         data = cls._struct.unpack_from(buffer, offset)
-        return cls(data[:2], data[2], data[3])
+        return cls(data[:2], data[2], data[3], data[4:8])
 
 
 @dataclass
@@ -44,4 +47,4 @@ class SpeciesSettings:
     @classmethod
     def unpack(cls, buffer: bytes, offset: int = 0):
         data = cls._struct.unpack_from(buffer, offset)
-        return cls(data[0], data[1], data[2], data[3], data[4:7], data[8])
+        return cls(data[0], data[1], data[2], data[3], data[4:8], data[8])

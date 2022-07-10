@@ -11,7 +11,8 @@ layout(local_size_x = X, local_size_y = Y, local_size_z = Z) in;
 struct Agent {
     vec2 position;
     float angle;
-    int species;
+    int species_index;
+    ivec4 species_mask;
 };
 
 struct SpeciesSettings {
@@ -32,9 +33,11 @@ layout(std430, binding = 1) buffer settings_buf {
     SpeciesSettings species_settings[];
 };
 
-layout(rgba8, location = 0) restrict uniform image2D trail_map;
+layout(rgba8, binding = 0) restrict uniform image2D trail_map;
+
 uniform float time;
 uniform float frame_time;
+uniform float trail_weight;
 
 // Source: www.cs.ubc.ca/~rbridson/docs/schechter-sca08-turbulence.pdf
 uint hash(uint state) {
@@ -55,6 +58,7 @@ float sense(Agent agent, SpeciesSettings settings, float sensor_angle_offset, ve
     float sensor_angle = agent.angle + sensor_angle_offset;
     vec2 sensor_dir = vec2(cos(sensor_angle), sin(sensor_angle));
     ivec2 sensor_center = ivec2(agent.position + sensor_dir * settings.sensor_offset_dst);
+    ivec4 sense_weight = agent.species_mask * 2 - 1;
     float sum = 0;
 
     for (int offset_x = -settings.sensor_size; offset_x <= settings.sensor_size; offset_x++) {
@@ -62,7 +66,7 @@ float sense(Agent agent, SpeciesSettings settings, float sensor_angle_offset, ve
             ivec2 pos = sensor_center + ivec2(offset_x, offset_y);
 
             if (pos.x >= 0 && pos.x < size.x && pos.y >= 0 && pos.y < size.y) {
-                sum += imageLoad(trail_map, pos).x;
+                sum += dot(sense_weight, imageLoad(trail_map, pos));
             }
         }
     }
@@ -77,7 +81,7 @@ void main() {
     vec2 size = imageSize(trail_map);
 
     Agent agent = agents[gl_GlobalInvocationID.x];
-    SpeciesSettings settings = species_settings[agent.species];
+    SpeciesSettings settings = species_settings[agent.species_index];
 
     uint random = hash(uint(agent.position.y * size.x + agent.position.x))
                 + hash(uint(gl_GlobalInvocationID.x + time * 100000));
@@ -102,11 +106,14 @@ void main() {
     vec2 direction = vec2(cos(agent.angle), sin(agent.angle));
     vec2 new_pos = agent.position + direction * settings.move_speed * frame_time;
 
-    if (new_pos.x < 0 || new_pos.x >= size.x || new_pos.y < 0 || new_pos.y > size.y) {
-        new_pos = clamp(new_pos, vec2(0), size - 0.01);
+    if (new_pos.x < 0 || new_pos.x >= size.x || new_pos.y < 0 || new_pos.y >= size.y) {
+        new_pos = clamp(new_pos, vec2(0), size - 1);
         agents[gl_GlobalInvocationID.x].angle = random01 * 2 * PI;
+    } else {
+        ivec2 coords = ivec2(new_pos);
+        vec4 old_trail = imageLoad(trail_map, coords);
+        imageStore(trail_map, coords, min(vec4(1), old_trail + vec4(agent.species_mask) * trail_weight * frame_time));
     }
 
     agents[gl_GlobalInvocationID.x].position = new_pos;
-    imageStore(trail_map, ivec2(new_pos), vec4(1));
 }

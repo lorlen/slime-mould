@@ -6,10 +6,12 @@
 
 layout(local_size_x = X, local_size_y = Y, local_size_z = Z) in;
 
-layout(rgba8, location = 0) restrict uniform image2D trail_map;
+layout(rgba8, binding = 0) restrict readonly uniform image2D trail_map;
+layout(rgba8, binding = 1) restrict writeonly uniform image2D diffused_trail_map;
+
 uniform float frame_time;
-uniform float diffuse_factor;
-uniform float fade_speed;
+uniform float diffuse_rate;
+uniform float decay_rate;
 
 void main() {
     ivec2 coords = ivec2(gl_GlobalInvocationID.xy);
@@ -23,8 +25,9 @@ void main() {
     }
 
     blurred /= 9;
-    blurred = original * (1 - diffuse_factor) + blurred * diffuse_factor;
-    blurred = max(vec4(0), blurred - fade_speed * frame_time);
+    float diffuse_weight = clamp(diffuse_rate * frame_time, 0, 1);
+    blurred = original * (1 - diffuse_weight) + blurred * diffuse_weight;
+    blurred = max(vec4(0), blurred - decay_rate * frame_time);
 
-    imageStore(trail_map, coords, blurred);
+    imageStore(diffused_trail_map, coords, blurred);
 }
