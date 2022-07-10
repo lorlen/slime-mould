@@ -1,12 +1,9 @@
-import math
-import random
-
 import moderngl
 from moderngl_window import WindowConfig, geometry
 
 from . import constants
 from .config import config
-from .glsl_structs import Agent, SpeciesSettings
+from .utils import generate_agents_buffer, generate_species_buffer, work_groups
 
 
 class Window(WindowConfig):
@@ -23,6 +20,9 @@ class Window(WindowConfig):
         )
         self.fade = self.load_compute_shader(
             constants.SHADER_DIR / constants.FADE_SHADER, constants.FADE_SHADER_GROUPS
+        )
+        self.color = self.load_compute_shader(
+            constants.SHADER_DIR / constants.COLOR_SHADER, constants.COLOR_SHADER_GROUPS
         )
         self.vao = geometry.quad_fs(normals=False).instance(self.program)
 
@@ -42,6 +42,17 @@ class Window(WindowConfig):
         self.diffused_trail_map.bind_to_image(1)
         self.diffused_trail_map.use(1)
 
+        self.color_map = self.ctx.texture(self.window_size, 4)
+        self.color_map.filter = moderngl.NEAREST, moderngl.NEAREST
+        self.color_map.bind_to_image(2)
+        self.color_map.use(2)
+
+        self.swap_buffer = self.ctx.buffer(
+            reserve=self.trail_map.size[0]
+            * self.trail_map.size[1]
+            * self.trail_map.components
+        )
+
     def init_uniforms(self):
         self.tex_sampler = self.program["tex_sampler"]
 
@@ -53,54 +64,29 @@ class Window(WindowConfig):
         self.diffuse_rate = self.fade["diffuse_rate"]
         self.decay_rate = self.fade["decay_rate"]
 
-        self.tex_sampler.value = 1
-        self.trail_weight.value = config.general.trail_weight
-        self.diffuse_rate.value = config.general.diffuse_rate
-        self.decay_rate.value = config.general.decay_rate
+        self.tex_sampler.value = 2  # type: ignore
+        self.trail_weight.value = config.general.trail_weight  # type: ignore
+        self.diffuse_rate.value = config.general.diffuse_rate  # type: ignore
+        self.decay_rate.value = config.general.decay_rate  # type: ignore
 
     def init_buffers(self):
-        agents = bytearray()
-        settings = bytearray()
-        self.num_agents = 0
-
-        for (species_index, species_config) in enumerate(config.species):
-            for i in range(species_config.agents):
-                mask = random.randrange(len(config.species))
-                agents += Agent(
-                    position=(self.window_size[0] / 2, self.window_size[1] / 2),
-                    angle=math.pi * 2 * i / species_config.agents,
-                    species_index=species_index,
-                    species_mask=(
-                        int(mask == 0),
-                        int(mask == 1),
-                        int(mask == 2),
-                        int(mask == 3),
-                    ),
-                ).pack()
-
-            settings += SpeciesSettings(
-                move_speed=species_config.move_speed,
-                turn_speed=species_config.turn_speed,
-                sensor_angle_degrees=species_config.sensor_angle_degrees,
-                sensor_offset_dst=species_config.sensor_offset_dst,
-                sensor_size=species_config.sensor_size,
-                color=species_config.color,
-            ).pack()
-
-            self.num_agents += species_config.agents
-
-        self.agent_buf = self.ctx.buffer(agents)
-        self.settings_buf = self.ctx.buffer(settings)
+        self.agent_buf = self.ctx.buffer(
+            generate_agents_buffer(config, self.window_size)
+        )
+        self.settings_buf = self.ctx.buffer(generate_species_buffer(config))
 
         self.agent_buf.bind_to_storage_buffer(0)
         self.settings_buf.bind_to_storage_buffer(1)
 
     def init_work_groups(self):
-        self.slime_groups = self.work_groups(
-            (self.num_agents, 1, 1), constants.SLIME_SHADER_GROUPS.values()
+        self.slime_groups = work_groups(
+            (config.general.agents, 1, 1), constants.SLIME_SHADER_GROUPS.values()
         )
-        self.fade_groups = self.work_groups(
+        self.fade_groups = work_groups(
             (*self.trail_map.size, 1), constants.FADE_SHADER_GROUPS.values()
+        )
+        self.color_groups = work_groups(
+            (*self.trail_map.size, 1), constants.COLOR_SHADER_GROUPS.values()
         )
 
     def load_shaders(self):
@@ -119,20 +105,21 @@ class Window(WindowConfig):
 
         return shaders
 
-    @staticmethod
-    def work_groups(data_dim, local_dim):
-        return tuple(math.ceil(d / l) for d, l in zip(data_dim, local_dim))
-
     def render(self, time: float, frame_time: float):
         self.ctx.clear()
 
         frame_time = frame_time if frame_time > 0 else 1 / 60
 
-        self.time.value = time
-        self.slime_frame_time.value = frame_time
-        self.fade_frame_time.value = frame_time
+        self.time.value = time  # type: ignore
+        self.slime_frame_time.value = frame_time  # type: ignore
+        self.fade_frame_time.value = frame_time  # type: ignore
 
         self.slime.run(*self.slime_groups)
         self.fade.run(*self.fade_groups)
+
+        self.diffused_trail_map.read_into(self.swap_buffer)
+        self.trail_map.write(self.swap_buffer)
+
+        self.color.run(*self.color_groups)
 
         self.vao.render(moderngl.TRIANGLE_STRIP)

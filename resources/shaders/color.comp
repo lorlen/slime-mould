@@ -1,0 +1,37 @@
+#version 460 core
+
+#define X 1
+#define Y 1
+#define Z 1
+
+layout(local_size_x = X, local_size_y = Y, local_size_z = Z) in;
+
+struct SpeciesSettings {
+    float move_speed;
+    float turn_speed;
+
+    float sensor_angle_degrees;
+    float sensor_offset_dst;
+    vec4 color;
+    int sensor_size;
+};
+
+layout(std430, binding = 1) buffer settings_buf {
+    SpeciesSettings species_settings[];
+};
+
+layout(rgba8, binding = 0) restrict readonly uniform image2D trail_map;
+layout(rgba8, binding = 2) restrict writeonly uniform image2D color_map;
+
+void main() {
+    ivec2 coords = ivec2(gl_GlobalInvocationID.xy);
+    vec4 trail = imageLoad(trail_map, coords);
+    vec4 color = vec4(0);
+
+    for (uint i = 0; i < species_settings.length(); i++) {
+        vec4 mask = vec4(i == 0, i == 1, i == 2, i == 3);
+        color += species_settings[i].color * dot(trail, mask);
+    }
+
+    imageStore(color_map, coords, color);
+}

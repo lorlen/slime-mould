@@ -5,7 +5,7 @@ description = ""
 authors = ["lorlen <filip.lew975@gmail.com>"]
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.10"
 moderngl = "^5.6.4"
 moderngl-window = "^2.4.1"
 typed-settings = "^1.1.0"

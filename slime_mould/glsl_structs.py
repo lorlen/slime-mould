@@ -20,7 +20,7 @@ class Agent:
     @classmethod
     def unpack(cls, buffer: bytes, offset: int = 0):
         data = cls._struct.unpack_from(buffer, offset)
-        return cls(data[:2], data[2], data[3], data[4:8])
+        return cls(data[:2], data[2], data[3], data[4:8])  # type: ignore
 
 
 @dataclass
@@ -47,4 +47,4 @@ class SpeciesSettings:
     @classmethod
     def unpack(cls, buffer: bytes, offset: int = 0):
         data = cls._struct.unpack_from(buffer, offset)
-        return cls(data[0], data[1], data[2], data[3], data[4:8], data[8])
+        return cls(data[0], data[1], data[2], data[3], data[4:8], data[8])  # type: ignore

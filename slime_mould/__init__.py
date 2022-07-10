@@ -4,4 +4,4 @@ from .window import Window
 
 
 def main():
-    moderngl_window.run_window_config(Window)
+    moderngl_window.run_window_config(Window)  # type: ignore

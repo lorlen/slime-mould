@@ -7,7 +7,6 @@ from .constants import CONFIG_PATH
 
 @ts.settings
 class SpeciesConfig:
-    agents: int
     move_speed: float
     turn_speed: float
     sensor_angle_degrees: float
@@ -18,7 +17,11 @@ class SpeciesConfig:
 
 @ts.settings
 class GeneralConfig:
-    spawn_mode: Literal["point", "random"]
+    agents: int
+    spawn_mode: tuple[
+        Literal["center", "inside-circle", "on-circle", "random"],
+        Literal["inwards", "outwards", "random"],
+    ]
     trail_weight: float
     diffuse_rate: float
     decay_rate: float

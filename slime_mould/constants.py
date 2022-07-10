@@ -15,4 +15,7 @@ SLIME_SHADER_GROUPS = {"X": 16, "Y": 1, "Z": 1}
 FADE_SHADER = "fade.comp"
 FADE_SHADER_GROUPS = {"X": 16, "Y": 16, "Z": 1}
 
+COLOR_SHADER = "color.comp"
+COLOR_SHADER_GROUPS = {"X": 16, "Y": 16, "Z": 1}
+
 CONFIG_PATH = Path(__file__).parent.parent / "config.toml"
